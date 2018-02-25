@@ -47,6 +47,25 @@ public abstract class InstrumentationUtils {
         copy[copy.length - 1] = l;
         listeners = copy;
     }
+    
+    public static abstract class SimpleListener implements  Listener {
+
+        @Override
+        public final void run(String id, Object... args) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
+        public void execute(Object ... args) {
+            
+        }
+    }
+    
+    public static void on(String id, ) {
+        Listener[] copy = new Listener[listeners.length + 1];
+        System.arraycopy(listeners, 0, copy, 0, listeners.length);
+        copy[copy.length - 1] = l;
+        listeners = copy;
+    }
 
     public static void clear() {
         listeners = new Listener[0];

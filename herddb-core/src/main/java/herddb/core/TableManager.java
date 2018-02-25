@@ -99,6 +99,7 @@ import herddb.utils.Bytes;
 import herddb.utils.DataAccessor;
 import herddb.utils.EnsureLongIncrementAccumulator;
 import herddb.utils.Holder;
+import herddb.utils.InstrumentationUtils;
 import herddb.utils.LocalLockManager;
 import herddb.utils.LockHandle;
 import herddb.utils.SystemProperties;
@@ -1206,6 +1207,7 @@ public final class TableManager implements AbstractTableManager, Page.Owner {
             /* We don't need the page if isn't loaded or isn't a mutable new page*/
             prevPage = newPages.get(prevPageId);
             previous = null;
+            InstrumentationUtils.instrument("upd.noindex.before", this, prevPageId, prevPage);
 
             if (prevPage != null) {
                 pageReplacementPolicy.pageHit(prevPage);
@@ -1221,6 +1223,7 @@ public final class TableManager implements AbstractTableManager, Page.Owner {
         }
 
         if (prevPage == null || prevPage.readonly) {
+            InstrumentationUtils.instrument("upd.noindex.prevpagenolock", this, prevPageId, prevPage);                
             /* Unloaded or immutable, set it as dirty */
             pageSet.setPageDirty(prevPageId, previous);
         } else {
@@ -1228,12 +1231,14 @@ public final class TableManager implements AbstractTableManager, Page.Owner {
             final Lock lock = prevPage.pageLock.readLock();
             lock.lock();
             try {
+                InstrumentationUtils.instrument("upd.noindex.prevpagelocked", this, prevPageId, prevPage);
                 if (prevPage.unloaded) {
                     /* Unfortunately unloaded, set it as dirty */
                     pageSet.setPageDirty(prevPageId, previous);
                 } else {
                     /* We can try to modify the page directly */
                     insertedInSamePage = prevPage.put(record);
+                    InstrumentationUtils.instrument("upd.noindex.prevpagelocked.put", this, prevPageId, prevPage, insertedInSamePage);                
                 }
             } finally {
                 lock.unlock();
